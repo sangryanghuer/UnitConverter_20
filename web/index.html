@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UnitConverter_20</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>UnitConverter_20</h1>
+      <p class="subtitle">길이 단위를 한 번에 변환합니다 (meter · feet · yard · cubit)</p>
+    </header>
+
+    <form id="convert-form" class="card" novalidate>
+      <div class="field-row">
+        <label for="unit">단위</label>
+        <select id="unit" name="unit" required>
+          <option value="meter">meter</option>
+          <option value="feet">feet</option>
+          <option value="yard">yard</option>
+          <option value="cubit">cubit</option>
+        </select>
+      </div>
+
+      <div class="field-row">
+        <label for="value">값</label>
+        <input
+          id="value"
+          name="value"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="예: 2.5"
+          required
+        >
+      </div>
+
+      <button type="submit" class="primary">변환</button>
+    </form>
+
+    <section id="error" class="error hidden" role="alert"></section>
+
+    <section id="results" class="card results hidden">
+      <h2>변환 결과</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>단위</th>
+            <th>값</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

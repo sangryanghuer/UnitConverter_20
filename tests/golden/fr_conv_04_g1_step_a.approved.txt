@@ -1,0 +1,7 @@
+status:success
+failed_fields:
+conversions:
+meter:0.3048
+feet:1.0000
+yard:0.3333
+cubit:0.6667

@@ -1,83 +1,196 @@
+# UnitConverter_20
 
-## Unit Converter (Python)
 ![unit-converter](./unit-converter.jpg)
-### Overview
-- 사용자가 입력한 길이(`단위:값`)를 기반으로, 해당 값을 다른 모든 단위로 변환해 출력하는 프로그램.
-- 새로운 단위를 추가할 때 기존 코드의 변경이 최소화되도록 설계한다.
-- 각 단위 변환 로직은 테스트 코드로 검증한다.
 
-### 가상환경 설정 및 실행
-```bash
-# 가상환경 생성
-python -m venv venv
+수업 중 길이 단위 변환 질문에 **한 번에** 답할 수 있는 Unit Converter.  
+Mom Test → PRD → TDD(ARRR) 순으로 요구사항을 고정하고, Cursor로 RED→GREEN→REFACTOR를 진행한다.
 
-# 가상환경 활성화 (Windows)
-venv\Scripts\activate
+**요구사항 SSOT:** [docs/PRD.md](docs/PRD.md)
 
-# 가상환경 활성화 (macOS/Linux)
-source venv/bin/activate
+---
 
-# 실행
-python UnitConverter.py
+## Overview
 
-# 가상환경 비활성화
-deactivate
+- 입력 `단위:값`(예: `meter:2.5`)을 받아 **등록 4단위**(`meter`, `feet`, `yard`, `cubit`)로 변환 결과를 반환한다.
+- **앵커:** `meter = 1` — 모든 값을 meter로 통일한 뒤 대상 단위로 환산한다.
+- Entity API(PRD): `convert_units(unit, value)` → `{ status, conversions, failed_fields }`
+- Test Loop Harness: `validate_lines(grid)` — `grid = {"unit", "value"}` → `convert_units` 위임 (MagicSquare 호환)
+
+### Mom Test → FR (요약)
+
+| Mom Test | FR | Test ID |
+|----------|-----|---------|
+| 입력 검증(음수·unknown unit) | FR-CONV-01 | D-CONV-01 |
+| `meter:2.5` golden · 전 단위 | FR-CONV-02 | D-CONV-GM-01 |
+| `cubit:1` · 전 단위 | FR-CONV-03 | D-CONV-02 |
+| `feet`/`yard` 입력 · 전 단위 | FR-CONV-04 | D-CONV-03 |
+
+---
+
+## 프로젝트 구조
+
+```
+UnitConverter_20/
+├── docs/PRD.md              # SSOT — FR, 상수, golden
+├── .cursorrules             # 도메인·API·TDD 규칙
+├── .cursor/commands/        # ARRR 슬래시 커맨드
+├── .cursor/skills/          # TDD·문서 Skill
+├── src/
+│   ├── convert_units.py     # Entity (PRD API)
+│   ├── validate_lines.py    # Harness adapter → convert_units
+│   └── web_server.py        # Web UI 로컬 서버
+├── web/                     # HTML UI (index.html, app.js, style.css)
+├── tests/
+│   └── test_validate_lines.py
+├── pyproject.toml           # pytest (pythonpath = ["src"])
+├── UnitConverter.py         # 레거시 CLI (후속 통합)
+├── Report/                  # 세션 보고서 NN.REPORT.md
+└── Prompting/               # Transcript Export
 ```
 
-### 기본 요구사항
-1. 사용자 입력 예시:
-   ```
-   meter:2.5
-   ```
-   → 출력:
-   ```
-   2.5 meter = 8.2 feet
-   2.5 meter = 2.7 yard
-   ...
-   ```
+---
 
-2. 현재 지원 단위:
-   - meter
-   - feet
-   - yard
+## Dual-Track TDD
 
-3. 새로운 단위가 추가될 때도 기존 코드의 변경이 최소화되도록 할 것.
+| Track | Layer | 대상 | Test ID 예 | 상태 |
+|-------|-------|------|------------|------|
+| **B (Logic)** | Entity | `validate_lines` / `convert_units` | D-CONV-01, D-CONV-GM-01, … | **진행 중** |
+| **A (UI)** | Boundary | `단위:값` 파싱·출력·흐름 | U-IN-01~05, U-OUT-01, U-FLOW-02 | 후속 |
 
-4. 각 단위 간 변환이 정확히 계산되도록 테스트 코드를 작성할 것.
+Track B: Domain Mock 금지 · golden **소수 4자리**(PRD).
 
-### 비즈니스 로직
-- `1 meter = 3.28084 feet`
-- `1 meter = 1.09361 yard`
-- feet/yard 간의 비율은 meter 기반으로 계산.
+---
 
-### 품질 요구사항
-- OCP를 만족하는 설계
-- SRP를 만족하는 클래스 구성
-- 입력 값 검증 (음수, 잘못된 형식, 없는 단위)
+## 변환 상수 (v0.1)
 
-### 추가 요구사항
-- **설정 외부화**
-   - 변환 비율을 외부 설정 파일(JSON/YAML)에서 로드
-- **동적으로 단위와 비율을 등록할 수 있도록 한다**
-   - 사용자 입력으로 `1 cubit = 0.4572 meter`를 등록하고 사용 가능
-- **출력 포맷 선택 기능** 
-   - JSON / CSV / 표 형태 출력
+| 상수 | 값 |
+|------|-----|
+| `FEET_PER_METER` | 3.28084 |
+| `YARDS_PER_METER` | 1.09361 |
+| `METERS_PER_CUBIT` | 0.4572 |
 
+**공식:** `meters = value × meters_per_unit[unit]` → `target = meters / meters_per_unit[target]`
 
-## 생성형AI를 활용한 Activities (6 시간)
+### Golden 예시 (`meter`, 2.5)
 
-1. 문제 코드 및 기본 요구사항 분석 (0.5시간)
-   - 기본 코드구조, 로직 이해
-2. 기본 요구사항 및 품질 요구사항 구현 (2시간)
-   - OCP를 만족하는 인터페이스 구현 
-   - SRP를 만족하도록 클래스 구현 
-   - 입력값 검증을 위한 구현
-3. TC 구현 (0.5시간)
-   - 단위변환 기능 검증 및 입력 값 검증 TC 작성 
-4. 추가 요구사항 구현 (2시간)
-   - 3개 요구사항 구현 및 TC 작성 
-5. 회고 및 발표 (1시간)
-   - 실습 목표와 달성도
-   - AI를 어떻게 활용했나? 도움이 된 순간과 한계는?
-   - TC를 추가해보면서 개선에 미친 영향, TC 작성 팁
-   - 클린코드와 리팩토링에서 느낀 장점과 어려운점
+| unit | 기대값 |
+|------|--------|
+| meter | 2.5 |
+| feet | 8.2021 |
+| yard | 2.7340 |
+| cubit | 5.4681 |
+
+---
+
+## 설치 · 실행
+
+### 가상환경
+
+```bash
+python -m venv venv
+venv\Scripts\activate          # Windows
+# source venv/bin/activate   # macOS/Linux
+pip install pytest
+```
+
+### pytest (Test Loop)
+
+```bash
+pytest tests/test_validate_lines.py -v
+pytest tests/ -v
+```
+
+> `pythonpath = ["src"]` — 로컬 `src/`가 다른 프로젝트 `validate_lines`보다 우선 import된다.
+
+### 레거시 CLI
+
+```bash
+python UnitConverter.py
+```
+
+입력 예: `meter:2.5` → feet / yard 등 출력 (cubit·PRD golden과 정합은 후속).
+
+### Web UI (HTML)
+
+```bash
+python src/web_server.py
+```
+
+브라우저에서 **http://127.0.0.1:8080** 접속.  
+단위·값 입력 후 **변환** — Entity `convert_units` API(`/api/convert`)로 4단위 결과 표시.
+
+추가 패키지 없음(stdlib `http.server`만 사용).
+
+---
+
+## Cursor ARRR 커맨드
+
+슬래시명만 입력 (추가 질문 없음).
+
+| 커맨드 | Phase | 역할 |
+|--------|-------|------|
+| `/red-test-plan` | Ask | C2C·테스트 플랜 (파일 없음) |
+| `/red-skeleton` | RED | tests/ 골격·본문 |
+| `/tdd-red` | RED | 실패 테스트 추가 |
+| `/golden-master` | RED | golden 회귀 |
+| `/green-minimal` | Run | src/ 최소 구현 |
+| `/refactor-smell` | Refine | 스멜 분석 |
+| `/refactor-safe` | Refine | 안전 리팩터 |
+| `/export-session` | Export | Report + Transcript |
+
+Skill: `.cursor/skills/magic-square-tdd/SKILL.md` · `.cursor/skills/magic-square-docs/SKILL.md`
+
+---
+
+## TDD 규칙 (요약)
+
+- **RED:** `tests/`만 · assert 완화·skip·xfail 금지
+- **GREEN:** `src/`만 · 테스트 변경 금지
+- **REFACTOR:** pytest 전체 통과 유지
+- 응답 첫 줄: `Phase: RED` / `Phase: GREEN` / `Phase: REFACTOR`
+
+---
+
+## 범위
+
+### v0.1 (현재)
+
+- 길이 4단위 · Entity 변환 · pytest TDD Harness
+
+### 후속 (PRD 범위 외)
+
+- GUI / Boundary 전체 · JSON·YAML 설정 · 동적 단위 등록 · CSV/JSON 출력
+
+---
+
+## 품질 · 추가 요구사항 (원본 실습)
+
+- OCP · SRP · 입력 검증(음수, 형식, unknown unit)
+- 설정 외부화 · 동적 단위 등록 · 출력 포맷(JSON/CSV/표) — **후속 Track**
+
+---
+
+## 문서 · 세션 기록
+
+| 경로 | 내용 |
+|------|------|
+| [docs/PRD.md](docs/PRD.md) | FR · SC · Test ID · golden |
+| [Report/](Report/) | 세션 요약 보고서 |
+| [Prompting/](Prompting/) | Cursor Transcript Export |
+| [Prompt/](Prompt/) | Mom Test · 워크북 |
+
+---
+
+## 생성형 AI 실습 (6시간)
+
+1. 문제 코드 및 기본 요구사항 분석 (0.5h)
+2. 기본·품질 요구사항 구현 (2h) — OCP/SRP/입력 검증
+3. TC 구현 (0.5h)
+4. 추가 요구사항 구현 (2h)
+5. 회고 및 발표 (1h)
+
+---
+
+## 저장소
+
+https://github.com/sangryanghuer/UnitConverter_20

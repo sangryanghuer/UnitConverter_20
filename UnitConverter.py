@@ -1,35 +1,52 @@
-def main():
-    input_str = input("Insert value for converting (ex: meter:2.5): ")
+import sys
+from pathlib import Path
 
-    if ':' not in input_str:
-        print("Invalid format. Use unit:value (ex: meter:2.5)")
-        return
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
-    unit, value_str = input_str.split(':', 1)
+from convert_units import convert_units
+
+UNIT_ORDER = ("meter", "feet", "yard", "cubit")
+
+
+def _parse_unit_value(input_str):
+    if ":" not in input_str:
+        return ("format", None)
+
+    unit, value_str = input_str.split(":", 1)
 
     try:
         value = float(value_str)
     except ValueError:
-        print(f"Invalid number: {value_str}")
+        return ("number", value_str)
+
+    return ("ok", (unit, value))
+
+
+def main():
+    input_str = input("Insert value for converting (ex: meter:2.5): ")
+
+    kind, data = _parse_unit_value(input_str)
+    if kind == "format":
+        print("Invalid format. Use unit:value (ex: meter:2.5)")
+        return
+    if kind == "number":
+        print(f"Invalid number: {data}")
         return
 
-    if unit == "meter":
-        meter_value = value
-    elif unit == "feet":
-        meter_value = value / 3.28084
-    elif unit == "yard":
-        meter_value = value / 1.09361
-    else:
-        print(f"Unknown unit: {unit}")
-        return
+    unit, value = data
+    result = convert_units(unit, value)
 
-    in_meters = meter_value
-    in_feet = meter_value * 3.28084
-    in_yards = meter_value * 1.09361
+    if result["status"] == "invalid":
+        if result["failed_fields"] == ["value"]:
+            print("Value must be zero or positive.")
+            return
+        if result["failed_fields"] == ["unit"]:
+            print(f"Unknown unit: {unit}")
+            return
 
-    print(f"{value} {unit} = {in_meters} meter")
-    print(f"{value} {unit} = {in_feet} feet")
-    print(f"{value} {unit} = {in_yards} yard")
+    for target in UNIT_ORDER:
+        converted = result["conversions"][target]
+        print(f"{value} {unit} = {converted} {target}")
 
 
 if __name__ == "__main__":
