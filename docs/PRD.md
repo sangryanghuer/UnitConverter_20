@@ -1,7 +1,8 @@
 # UnitConverter_20 — PRD (SSOT)
 
 **버전:** 0.1.0  
-**Entity API:** `convert_units`
+**Entity API:** `convert_units`  
+**문제 정의:** [Report/01.UnitConvertor_ProblemDefinition_Report.md](../Report/01.UnitConvertor_ProblemDefinition_Report.md)
 
 ---
 
